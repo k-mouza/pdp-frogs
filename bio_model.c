@@ -76,7 +76,7 @@ void masterCode(void)
 		
 		if ( (getAliveFrogs() == 0) && (masterStatus == 1) )
 		{
-			printf("All frogs are dead...Exiting\n");
+			printf("ALL FROGS ARE DEAD...EXITING\n");
 			break;	
 		}
 		
