@@ -176,7 +176,7 @@ void frogCode(void)
 			
 				if (my_frog->hops % 300 == 0)
 				{
-					printf("avg_pop_infl = %.5f\n", my_frog->sum_popInflux/300.0);
+					//printf("avg_pop_infl = %.5f\n", my_frog->sum_popInflux/300.0);
 					if (willGiveBirth(my_frog->sum_popInflux/300.0, &seed))
 					{
 						int child = startWorkerProcess();
@@ -189,7 +189,7 @@ void frogCode(void)
 			
 				if ( my_frog->hops >= 500 && !my_frog->infected)
 				{
-					printf("avg_inf_lvl = %.5f\n", my_frog->sum_infLevel/500.0);
+					//printf("avg_inf_lvl = %.5f\n", my_frog->sum_infLevel/500.0);
 					if (willCatchDisease(my_frog->sum_infLevel/500.0, &seed))
 						my_frog->infected = 1;
 				}
