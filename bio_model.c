@@ -78,7 +78,13 @@ void masterCode(void)
 		{
 			printf("All frogs are dead...Exiting\n");
 			break;	
-		} 
+		}
+		
+		if (getAliveFrogs() >= 100)
+		{
+			printf("MORE THAN 100 FROGS! EXITING...\n");
+			MPI_Abort(MPI_COMM_WORLD, 1);
+		}
 	}
 
 	int stop_cell = 2;
