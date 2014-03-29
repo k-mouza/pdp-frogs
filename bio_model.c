@@ -289,7 +289,7 @@ void frogCode(void)
 						my_frog->infected = 1;
 				}
 			
-				if ( (my_frog->inf_hops >= 1700) && (my_frog->inf_hops % 1700 == 0) )
+				if ( (my_frog->inf_hops >= 1200) && (my_frog->inf_hops % 1200 == 0) )
 				{
 					// every 700 infected hops check to see if I will die
 					if (willDie(&seed))
