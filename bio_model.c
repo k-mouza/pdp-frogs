@@ -24,6 +24,18 @@ void init_default_values(void)
 	YEARS = 100;
 }
 
+int getType(int status)
+{
+	if (status == 2)
+		return TYPE_MASTER;
+	else if (status == 1 && getRank() <= NUM_OF_CELLS)
+		return TYPE_CELL;
+	else if (status == 1)
+		return TYPE_FROG;
+	else
+		return TYPE_UNUSED;
+}
+
 int getAliveFrogs(void)
 {
 	return getActiveWorkers() - NUM_OF_CELLS;
@@ -39,8 +51,10 @@ void masterCode(void)
 	long seed = -1-getRank();
 	initialiseRNG(&seed);
 	
-	time_t end, seconds = 1;
-	int all_dead = 0;
+	time_t print_time, print_secs = 1;
+	time_t year_time, year_secs = 2;
+	int curr_year = 0;
+	int cell_command;
 	
 	int i, workerPid;	
 	for (i=0; i<NUM_OF_CELLS; i++)
@@ -63,31 +77,59 @@ void masterCode(void)
 
 	int masterStatus = masterPoll();
 	
-	end = time(NULL) + seconds;
+	print_time = time(NULL) + print_secs;
+	year_time = time(NULL) + year_secs;
+	
 	while (getAliveFrogs() > 0)
 	{
 		masterStatus = masterPoll();
 
-		if (time(NULL) >= end)
+		if (time(NULL) >= year_time)
 		{
-			printf("Alive frogs: %d\n", getAliveFrogs());
-			end = time(NULL) + seconds;
+			// A year has passed. Instruct cells to print their data.
+			cell_command = PRINT_CELL;
+			printf("YEAR %d\n", curr_year);
+			for (i=0; i<NUM_OF_CELLS; i++)
+			{
+				MPI_Send(&cell_command, 1, MPI_INT, i+1, HOP_TAG, MPI_COMM_WORLD);
+			}
+			
+			curr_year++;
+			year_time = time(NULL) + year_secs;
 		}
 		
-		if ( (getAliveFrogs() == 0) && (masterStatus == 1) )
+		if (curr_year == YEARS)
 		{
-			printf("ALL FROGS ARE DEAD...EXITING\n");
+			// Simulation end
+			printf("SIMULATION END. NUMBER OF FROGS LEFT: %d\n", getAliveFrogs());
+			cell_command = STOP_FROGS;
+			for (i=0; i<NUM_OF_CELLS; i++)
+			{
+				MPI_Send(&cell_command, 1, MPI_INT, i+1, HOP_TAG, MPI_COMM_WORLD);
+			}
+			curr_year++; // trick to prevent master from entering this if statement more than once
+		}
+
+		if (time(NULL) >= print_time && curr_year <= YEARS)
+		{
+			printf("Alive frogs: %d\n", getAliveFrogs());
+			print_time = time(NULL) + print_secs;
+		}
+		
+		if ( (getAliveFrogs() == 0) && (curr_year < YEARS) )
+		{
+			printf("ALL FROGS ARE DEAD. EXITING...\n");
 			break;	
 		}
 		
 		if (getAliveFrogs() >= 100)
 		{
-			printf("MORE THAN 100 FROGS! EXITING...\n");
+			fprintf(stderr, "\tMORE THAN 100 FROGS! EXITING...\n");
 			MPI_Abort(MPI_COMM_WORLD, 1);
 		}
 	}
 
-	int stop_cell = 2;
+	int stop_cell = STOP_CELL;
 	for (i=0; i<NUM_OF_CELLS; i++)
 	{
 		MPI_Send(&stop_cell, 1, MPI_INT, i+1, HOP_TAG, MPI_COMM_WORLD);
@@ -159,9 +201,7 @@ void frogCode(void)
 		while(1)
 		{
 			if (rand() < 0.666666666*((double)RAND_MAX + 1.0)) // hop with a 4/6 propability
-			{
-				my_frog->hops++;
-			
+			{			
 				frogHop(start_pos.x, start_pos.y, &my_frog->pos.x, &my_frog->pos.y, &seed);
 				cellnum = getCellFromPosition(my_frog->pos.x, my_frog->pos.y);
 
@@ -180,7 +220,7 @@ void frogCode(void)
 				my_frog->infLevel[my_frog->hops % 500] = cell_values[1];
 				my_frog->sum_infLevel += cell_values[1];
 			
-				if (my_frog->hops % 300 == 0)
+				if ( (my_frog->hops >= 300) && (my_frog->hops % 300 == 0) )
 				{
 					//printf("avg_pop_infl = %.5f\n", my_frog->sum_popInflux/300.0);
 					if (willGiveBirth(my_frog->sum_popInflux/300.0, &seed))
@@ -200,7 +240,7 @@ void frogCode(void)
 						my_frog->infected = 1;
 				}
 			
-				if ( (my_frog->hops % 700 == 0) && (my_frog->infected == 1) )
+				if ( (my_frog->hops >= 700) && (my_frog->hops % 700 == 0) && my_frog->infected )
 				{
 					if (willDie(&seed))
 					{
@@ -213,6 +253,8 @@ void frogCode(void)
 			
 				start_pos.x = my_frog->pos.x;
 				start_pos.y = my_frog->pos.y;
+				
+				my_frog->hops++;
 			}
 		}
 	}
@@ -224,55 +266,53 @@ void cellCode(void)
 	long seed = -1-getRank();
 	initialiseRNG(&seed);
 	
-	int year = 0, frog_infected, send_to_frog[2];
-	int terminate = 0;
+	int frog_infection, send_to_frog[2];
+	int stop_frog = 0;
 	MPI_Status status;
 	MPI_Request request[2];
-	time_t end, seconds = 2;
 	
 	cell_t *my_cell = newCell();
 		
-	while(!terminate)
+	while(1)
 	{
-		end = time(NULL) + seconds;
-		while(time(NULL) < end)
+		MPI_Recv(&frog_infection, 1, MPI_INT, MPI_ANY_SOURCE, HOP_TAG, MPI_COMM_WORLD, &status);
+		
+		if (frog_infection == STOP_CELL)
 		{
-			MPI_Recv(&frog_infected, 1, MPI_INT, MPI_ANY_SOURCE, HOP_TAG, MPI_COMM_WORLD, &status);
-			if(frog_infected > 1)
-			{
-				terminate = 1;
-				shutdownPool();
-				break;
-			}
-			my_cell->populationInflux++;
-			my_cell->infectionLevel += frog_infected;
-	
-			//printf("Cell pop = %d, inflev = %d\n", my_cell->populationInflux, my_cell->infectionLevel);
-	
-			send_to_frog[0] = my_cell->populationInflux;
-			send_to_frog[1] = my_cell->infectionLevel;
-			
-			if (year >= YEARS)
-			{
-				send_to_frog[0] = -1;
-				send_to_frog[1] = -1;
-				shutdownPool();
-			}
-			
-			MPI_Send(send_to_frog, 2, MPI_INT, status.MPI_SOURCE, HOP_TAG, MPI_COMM_WORLD);
+			break;
+		}
+		else if (frog_infection == PRINT_CELL)
+		{
+			printf("Cell %d: \tpopulationInflux = %d\tinfectionLevel = %d\n", getRank(), my_cell->populationInflux, my_cell->infectionLevel);
+			my_cell->populationInflux = 0;
+			my_cell->infectionLevel = 0;
+			continue;
+		}
+		else if (frog_infection == STOP_FROGS)
+		{
+			stop_frog = 1;
+			continue;
 		}
 		
-		if ( (year < YEARS) && terminate)
-			printf("Unfinished year %d:\tCell %d: \tpopulationInflux = %d\tinfectionLevel = %d\n", year, getRank(), my_cell->populationInflux, my_cell->infectionLevel);
-			
-		else if (year < YEARS)
-			printf("Year %d:\tCell %d: \tpopulationInflux = %d\tinfectionLevel = %d\n", year, getRank(), my_cell->populationInflux, my_cell->infectionLevel);
+		my_cell->populationInflux++;
+		my_cell->infectionLevel += frog_infection;
+
+		//printf("Cell pop = %d, inflev = %d\n", my_cell->populationInflux, my_cell->infectionLevel);
+
+		send_to_frog[0] = my_cell->populationInflux;
+		send_to_frog[1] = my_cell->infectionLevel;
 		
-		my_cell->populationInflux = 0;
-		my_cell->infectionLevel = 0;
+		if (stop_frog)
+		{
+			send_to_frog[0] = -1;
+			send_to_frog[1] = -1;
+		}
 		
-		year++;
+		MPI_Send(send_to_frog, 2, MPI_INT, status.MPI_SOURCE, HOP_TAG, MPI_COMM_WORLD);
 	}
+		
+//	if ( (year < YEARS) && terminate)
+//		printf("Unfinished year %d:\tCell %d: \tpopulationInflux = %d\tinfectionLevel = %d\n", year, getRank(), my_cell->populationInflux, my_cell->infectionLevel);					
 	
 	free(my_cell);
 }

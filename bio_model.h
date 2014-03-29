@@ -1,9 +1,18 @@
-#ifndef __BIO_MODEL_H
-#define __BIO_MODEL_H
+#ifndef _BIO_MODEL_H
+#define _BIO_MODEL_H
+
+#define TYPE_UNUSED	-1
+#define TYPE_CELL	0
+#define TYPE_FROG	1
+#define TYPE_MASTER	2
 
 #define HOP_TAG 0
 #define INF_TAG 1
 #define POS_TAG 2
+
+#define STOP_CELL	-1
+#define PRINT_CELL	2
+#define STOP_FROGS	3
 
 int NUM_OF_CELLS;
 int INIT_FROGS;
@@ -38,6 +47,8 @@ struct cell
 void print_usage(void);
 
 void init_default_values(void);
+
+int getType(int status);
 
 int getAliveFrogs(void);
 

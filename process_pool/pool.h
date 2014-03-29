@@ -1,5 +1,5 @@
-#ifndef POOL_H_
-#define POOL_H_
+#ifndef _POOL_H
+#define _POOL_H
 
 // The core process pool command which instructs what to do next
 enum PP_Control_Command {
@@ -36,7 +36,5 @@ int getCommandData();
 int getActiveWorkers();
 // Returns the rank of the caller
 int getRank();
-//Returns the array with the active workers' ids
-char *getActiveArray(int *procs);
 
 #endif /* POOL_H_ */

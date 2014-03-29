@@ -3,7 +3,6 @@
 #include <mpi.h>
 
 #include "pool.h"
-#include "../bio_model.h"
 
 // MPI P2P tag to use for command communications, it is important not to reuse this
 #define PP_CONTROL_TAG 16384
@@ -57,18 +56,10 @@ int processPoolInit() {
 		
 		return 2;
 	}
-	// Added this part ===========================
-	else if (PP_myRank <= NUM_OF_CELLS)
-	{
-		MPI_Recv(&in_command, 1, PP_COMMAND_TYPE, 0, PP_CONTROL_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		handleRecievedCommand();
-		return 3; // this means i am a cell worker
-	}
-	// ============================================
 	else
 	{
 		MPI_Recv(&in_command, 1, PP_COMMAND_TYPE, 0, PP_CONTROL_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		return handleRecievedCommand(); // this means i am a frog worker
+		return handleRecievedCommand();
 	}
 }
 
@@ -83,6 +74,7 @@ void processPoolFinalise() {
 			if (PP_DEBUG) printf("[Master] Shutting down process %d\n", i);
 			struct PP_Control_Package out_command = createCommandPackage(PP_STOP);
 			MPI_Send(&out_command, 1, PP_COMMAND_TYPE, i+1, PP_CONTROL_TAG, MPI_COMM_WORLD);
+			//printf("MASTER SENT STOP TO %d\n", i+1);
 		}
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -152,7 +144,7 @@ void shutdownPool() {
 	if (PP_myRank != 0) {
 		if (PP_DEBUG) printf("[Worker] Commanding a pool shutdown\n");
 		struct PP_Control_Package out_command = createCommandPackage(PP_RUNCOMPLETE);
-		MPI_Send(&out_command, 1, PP_COMMAND_TYPE, 0, PP_CONTROL_TAG, MPI_COMM_WORLD);
+		MPI_Ssend(&out_command, 1, PP_COMMAND_TYPE, 0, PP_CONTROL_TAG, MPI_COMM_WORLD);
 	}
 }
 
@@ -216,18 +208,6 @@ int getRank()
 	return PP_myRank;
 }
 
-char *getActiveArray(int *procs)
-{
-	*procs = PP_numProcs;
-/*
-	char *ret = (char *)malloc(PP_numProcs);
-	int i;
-	
-	for(i=0; i<PP_numProcs; i++)
-		ret[i] = PP_active[i];
-*/	
-	return PP_active;
-}
 
 /**
  * Called by the master and will start awaiting processes (signal to them to start) if required.

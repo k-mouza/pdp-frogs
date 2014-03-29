@@ -42,17 +42,19 @@ int main(int argc, char **argv)
 	 * For workers this subroutine will block until the master has woken it up to do some work
 	 */
 	int statusCode = processPoolInit();
-	if (statusCode == 1)
+	
+	int mytype = getType(statusCode);
+	if (mytype == TYPE_FROG)
 	{
 		// A frog worker so do the worker tasks
 		frogCode();
 	}
-	else if (statusCode == 3)
+	else if (mytype == TYPE_CELL)
 	{
 		// A cell worker so do the worker tasks
 		cellCode();
 	}
-	else if (statusCode == 2)
+	else if (mytype == TYPE_MASTER)
 	{
 		masterCode();
 	}
