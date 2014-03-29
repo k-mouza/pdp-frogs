@@ -1,7 +1,11 @@
 CC = mpicc
 CFLAGS = -lm 
 
-OBJ = frogs_VS_yellow_tongues.o frog-functions.o bio_model.o actor.o ran2.o process_pool/pool.o
+INCDIR = include/
+SOURCEDIR = src/
+ACTORDIR = actor_framework/
+
+OBJ = $(SOURCEDIR)frogs_VS_yellow_tongues.o $(SOURCEDIR)frog-functions.o $(SOURCEDIR)bio_model.o $(SOURCEDIR)ran2.o $(ACTORDIR)actor.o $(ACTORDIR)pool.o
 EXEC = frogs_VS_yellow_tongues
 
 all: exec
