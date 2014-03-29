@@ -266,14 +266,14 @@ void frogCode(void)
 				 * we subtract, from the sum, the oldest infection level, from 500 hops ago,
 				 * replace it with the new one and add it to the sum.
 				 */
-				my_frog->sum_infLevel -= my_frog->infLevel[my_frog->hops % 500];
-				my_frog->infLevel[my_frog->hops % 500] = cell_values[1];
+				my_frog->sum_infLevel -= my_frog->infLevel[my_frog->hops % CHECK_INFEC];
+				my_frog->infLevel[my_frog->hops % CHECK_INFEC] = cell_values[1];
 				my_frog->sum_infLevel += cell_values[1];
 			
-				if ( (my_frog->hops >= 300) && (my_frog->hops % 300 == 0) )
+				if ( (my_frog->hops >= CHECK_BIRTH) && (my_frog->hops % CHECK_BIRTH == 0) )
 				{
-					// every 300 hops check if I will reproduce
-					if (willGiveBirth(my_frog->sum_popInflux/300.0, &seed))
+					// every CHECK_BIRTH hops check if I will reproduce
+					if (willGiveBirth((float)my_frog->sum_popInflux/CHECK_BIRTH, &seed))
 					{
 						int child = startWorkerProcess();
 						// send my position to the child
@@ -282,16 +282,16 @@ void frogCode(void)
 					my_frog->sum_popInflux = 0;
 				}
 			
-				if ( my_frog->hops >= 500 && !my_frog->infected)
+				if ( my_frog->hops >= CHECK_INFEC && !my_frog->infected)
 				{
 					// if I am not infected, check to see if I will catch the disease
-					if (willCatchDisease(my_frog->sum_infLevel/500.0, &seed))
+					if (willCatchDisease((float)my_frog->sum_infLevel/CHECK_INFEC, &seed))
 						my_frog->infected = 1;
 				}
 			
-				if ( (my_frog->inf_hops >= 1200) && (my_frog->inf_hops % 1200 == 0) )
+				if ( (my_frog->inf_hops >= CHECK_DEATH) && (my_frog->inf_hops % CHECK_DEATH == 0) )
 				{
-					// every 700 infected hops check to see if I will die
+					// every CHECK_DEATH infected hops check to see if I will die
 					if (willDie(&seed))
 					{
 						free(my_frog);
@@ -330,33 +330,37 @@ void cellCode(void)
 	{
 		recv_mesg(&frog_infection, 1, MPI_INT, MPI_ANY_SOURCE, HOP_TAG, MPI_COMM_WORLD, &status);
 		
+		// if received message is not 0 or 1 then it is from master
 		if (frog_infection == STOP_CELL)
-		{
+			// end of simulation
 			break;
-		}
 		else if (frog_infection == PRINT_CELL)
 		{
+			// end of a year. printf values and reset counters
 			printf("Cell %d: \tpopulationInflux = %d\tinfectionLevel = %d\n", getRank(), my_cell->populationInflux, my_cell->infectionLevel);
 			my_cell->populationInflux = 0;
 			my_cell->infectionLevel = 0;
-			continue;
+			continue; // continue, or else I would block on the send
 		}
 		else if (frog_infection == STOP_FROGS)
 		{
+			// instructed to stop the frogs
 			stop_frog = 1;
-			continue;
+			continue; // continue, or else I would block on the send
 		}
 		
+		// update cell's data
 		my_cell->populationInflux++;
 		my_cell->infectionLevel += frog_infection;
 
-		//printf("Cell pop = %d, inflev = %d\n", my_cell->populationInflux, my_cell->infectionLevel);
 
+		// pack the data and send them to frog
 		send_to_frog[0] = my_cell->populationInflux;
 		send_to_frog[1] = my_cell->infectionLevel;
 		
 		if (stop_frog)
 		{
+			// if I have been instructed to stop the frogs then send them negative values
 			send_to_frog[0] = -1;
 			send_to_frog[1] = -1;
 		}

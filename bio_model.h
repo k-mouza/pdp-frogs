@@ -17,17 +17,20 @@
 #define PRINT_CELL	2	// cell command for printing cell's data
 #define STOP_FROGS	3	// cell command for stopping frogs polling to that cell
 
+#define CHECK_BIRTH 300
+#define CHECK_DEATH 1200
+#define CHECK_INFEC	500
 
 typedef struct frog frog_t;
 struct frog
 {
-	point_t pos;			// frog position
-	int infected;			// 0 if the frog is healthy or 1 if the frog is infected 
-	int hops;				// number of hops so far
-	int inf_hops;			// number of infected hops
-	int sum_popInflux;		// the sum of populationInfluxes of the last 300 cells 
-	int infLevel[500];		// the infectionLevel of each one of the last 500 cells 
-	int sum_infLevel;		// the sum of infectionLevels of the last 500 cells 
+	point_t pos;				// frog position
+	int infected;				// 0 if the frog is healthy or 1 if the frog is infected 
+	int hops;					// number of hops so far
+	int inf_hops;				// number of infected hops
+	int sum_popInflux;			// the sum of populationInfluxes of the last 300 cells 
+	int infLevel[CHECK_INFEC];	// the infectionLevel of each one of the last 500 cells 
+	int sum_infLevel;			// the sum of infectionLevels of the last 500 cells 
 };
 
 
