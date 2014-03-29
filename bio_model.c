@@ -72,7 +72,7 @@ void masterCode(void)
 		if (i < INIT_INFECTED) infected = 1;
 		printf("Master started Frog worker %d on MPI process %d (infected:%d)\n", i+1 , workerPid, infected);
 			
-		MPI_Send(&infected, 1, MPI_INT, workerPid, INF_TAG, MPI_COMM_WORLD);
+		send_mesg(&infected, 1, MPI_INT, workerPid, INF_TAG, MPI_COMM_WORLD);
 	}
 
 	int masterStatus = masterPoll();
@@ -91,7 +91,7 @@ void masterCode(void)
 			printf("YEAR %d\n", curr_year);
 			for (i=0; i<NUM_OF_CELLS; i++)
 			{
-				MPI_Send(&cell_command, 1, MPI_INT, i+1, HOP_TAG, MPI_COMM_WORLD);
+				send_mesg(&cell_command, 1, MPI_INT, i+1, HOP_TAG, MPI_COMM_WORLD);
 			}
 			
 			curr_year++;
@@ -105,7 +105,7 @@ void masterCode(void)
 			cell_command = STOP_FROGS;
 			for (i=0; i<NUM_OF_CELLS; i++)
 			{
-				MPI_Send(&cell_command, 1, MPI_INT, i+1, HOP_TAG, MPI_COMM_WORLD);
+				send_mesg(&cell_command, 1, MPI_INT, i+1, HOP_TAG, MPI_COMM_WORLD);
 			}
 			curr_year++; // trick to prevent master from entering this if statement more than once
 		}
@@ -132,7 +132,7 @@ void masterCode(void)
 	int stop_cell = STOP_CELL;
 	for (i=0; i<NUM_OF_CELLS; i++)
 	{
-		MPI_Send(&stop_cell, 1, MPI_INT, i+1, HOP_TAG, MPI_COMM_WORLD);
+		send_mesg(&stop_cell, 1, MPI_INT, i+1, HOP_TAG, MPI_COMM_WORLD);
 	}
 }
 
@@ -181,7 +181,7 @@ void frogCode(void)
 	init_type(&mpi_t_point);
 	
 	while (workerStatus)
-	{		
+	{
 		parent = getCommandData();
 		if (parent == 0)
 			frogHop(0, 0, &start_pos.x, &start_pos.y, &seed); // initial position
@@ -205,7 +205,7 @@ void frogCode(void)
 				frogHop(start_pos.x, start_pos.y, &my_frog->pos.x, &my_frog->pos.y, &seed);
 				cellnum = getCellFromPosition(my_frog->pos.x, my_frog->pos.y);
 
-				MPI_Send(&my_frog->infected, 1, MPI_INT, cellnum, HOP_TAG, MPI_COMM_WORLD);
+				send_mesg(&my_frog->infected, 1, MPI_INT, cellnum, HOP_TAG, MPI_COMM_WORLD);
 				MPI_Recv(cell_values, 2, MPI_INT, cellnum, HOP_TAG, MPI_COMM_WORLD, &status);
 
 				if (cell_values[0] + cell_values[1] < 0)
@@ -228,7 +228,7 @@ void frogCode(void)
 						int child = startWorkerProcess();
 						//printf("i am %d and my child is %d\n", getRank(), child);
 
-						MPI_Send(&my_frog->pos, 1, mpi_t_point, child, POS_TAG, MPI_COMM_WORLD);
+						send_mesg(&my_frog->pos, 1, mpi_t_point, child, POS_TAG, MPI_COMM_WORLD);
 					}
 					my_frog->sum_popInflux = 0;
 				}
@@ -308,7 +308,7 @@ void cellCode(void)
 			send_to_frog[1] = -1;
 		}
 		
-		MPI_Send(send_to_frog, 2, MPI_INT, status.MPI_SOURCE, HOP_TAG, MPI_COMM_WORLD);
+		send_mesg(send_to_frog, 2, MPI_INT, status.MPI_SOURCE, HOP_TAG, MPI_COMM_WORLD);
 	}
 		
 //	if ( (year < YEARS) && terminate)
