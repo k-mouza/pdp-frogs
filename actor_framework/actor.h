@@ -26,10 +26,15 @@ void send_mesg(void *buf, int count, MPI_Datatype type, int dest, int tag, MPI_C
  */
 void recv_mesg(void *buf, int count, MPI_Datatype type, int source, int tag, MPI_Comm comm, MPI_Status *status);
 
-/**
+/*
  * Writes an error message to stderr and MPI Aborts
  */
 void force_terminate(char *message);
+
+/*
+ * Finalises the process pool and the MPI environment
+ */
+void finalise_environment(void);
 
 /*
  * Initialises and commits the desired type

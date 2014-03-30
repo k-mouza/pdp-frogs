@@ -52,7 +52,8 @@ int main(int argc, char **argv)
 	parse_given_values(frogs, infected, total_years, limit);
 
 	/*
-	 * Get type of worker (frog or cell) or master type and
+	 * Get type of worker (frog or cell) or master type, using the 
+	 * statusCode returned from processPoolInit, and
 	 * call the corresponding function
 	 */
 	int mytype = getType(statusCode);
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
 		masterCode();
 	}
 	
-	processPoolFinalise();
-	MPI_Finalize();
+	finalise_environment();
+	
 	return 0;
 }

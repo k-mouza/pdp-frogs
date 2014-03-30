@@ -28,6 +28,12 @@ void force_terminate(char *message)
 	MPI_Abort(MPI_COMM_WORLD, 1);
 }
 
+void finalise_environment(void)
+{
+	processPoolFinalise();
+	MPI_Finalize();
+}
+
 void init_type(MPI_Datatype *mpi_t_point)
 {
     point_t my_point;    
