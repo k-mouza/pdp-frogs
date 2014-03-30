@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 	int frogs = -1, infected = -1, total_years = -1, limit = -1;
 	
 	
-	MPI_Init(&argc, &argv);
+	init_environment(&argc, &argv);
 	
 	/*
 	 * Initialise the process pool.

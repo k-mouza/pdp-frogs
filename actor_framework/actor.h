@@ -10,6 +10,11 @@ struct point
 };
 
 /*
+ * Inits MPI environment
+ */
+void init_environment(int *argc, char ***argv);
+
+/*
  * Sends a message to dest using an MPI send call
  */
 void send_mesg(void *buf, int count, MPI_Datatype type, int dest, int tag, MPI_Comm comm);

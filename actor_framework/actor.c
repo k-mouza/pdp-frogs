@@ -5,9 +5,17 @@
 #include "actor.h"
 #include "pool.h"
 
+#define MPI_BUFF_SIZE 10240
+
+void init_environment(int *argc, char ***argv)
+{
+	MPI_Init(argc, argv);
+	MPI_Buffer_attach(malloc(MPI_BUFF_SIZE), MPI_BUFF_SIZE);
+}
+
 void send_mesg(void *buf, int count, MPI_Datatype type, int dest, int tag, MPI_Comm comm)
 {
-	MPI_Send(buf, count, type, dest, tag, comm);
+	MPI_Bsend(buf, count, type, dest, tag, comm);
 }
 
 void recv_mesg(void *buf, int count, MPI_Datatype type, int source, int tag, MPI_Comm comm, MPI_Status *status)
