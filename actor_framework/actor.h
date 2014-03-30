@@ -3,6 +3,8 @@
 
 #include <mpi.h>
 
+#define MPI_BUFF_SIZE 10240 // 10 KB mpi buffer
+
 typedef struct point point_t;
 struct point
 {

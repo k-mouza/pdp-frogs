@@ -5,7 +5,6 @@
 #include "actor.h"
 #include "pool.h"
 
-#define MPI_BUFF_SIZE 10240
 
 void init_environment(int *argc, char ***argv)
 {
