@@ -1,0 +1,14 @@
+#!/bin/bash
+#$ -V
+#$ -l h_rt=:20:
+#$ -pe mpi 64
+#$ -cwd
+
+init_frogs=34
+infected=4
+years=10
+limit=120
+
+make clean
+make
+mpirun -np 120 ./frogs_VS_yellow_tongues -f $init_frogs -i $infected -y $years -l $limit

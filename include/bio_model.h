@@ -18,7 +18,7 @@
 #define STOP_FROGS	3	// cell command for stopping frogs polling to that cell
 
 #define CHECK_BIRTH 300
-#define CHECK_DEATH 1200
+#define CHECK_DEATH 700
 #define CHECK_INFEC	500
 
 typedef struct frog frog_t;
